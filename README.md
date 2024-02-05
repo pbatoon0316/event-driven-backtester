@@ -3,6 +3,8 @@
 
 I would like to present my home-built backtesting framework for evaluating trading strategies using historical stock price data. It utilizes various technical indicators and entry/exit conditions to simulate and analyze trading decisions. The main difference between this backtesting framework and other vector-based programs is that this does not hold overlapping positions within the same ticker. When a trade is entered, no new positions are established until the trade hits stop loss or exit criteria.
 
+This framework uses `yfinance` to obtain and download data, so the universe of available trading instruments are equity stocks, futures, crypto, bonds, yields, etc... Given you know the ticker and its specific formatting.
+
 #### Dependencies
 
 The following libraries are imported as dependencies:
