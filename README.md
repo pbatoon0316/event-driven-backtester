@@ -76,7 +76,7 @@ stocks = pd.read_csv(url)
 tickers = stocks['Symbol'].tolist()
 
 #%% Run backtest to generate population of trades
-size = 1000       # $1000 if capital deploted
+size = 1000       # $1000 if capital deployed
 max_loss = 0.05   # $50 of risk before stop loss hit
 
 df_backtest = backtest(data, trade_size=size, max_loss=max_loss)
