@@ -15,8 +15,10 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 ##################################
 #%% Main event driven backtester
+# Please note that this backtester uses the yfinance MultiColumn structure and requires at least two tickers.
+# Also note, it is only configured for Daily data, however this can be further modified for different timeframes,
 ##################################
-def backtest(data, trade_size=1000, max_loss=0.05):
+def backtest(data=['SPY','IWM','QQQ','TLT','VXN'], trade_size=1000, max_loss=0.05):
 
     # Get tickers
     tickers = list(data.columns.get_level_values(1).unique())
@@ -215,6 +217,11 @@ def sample_backtest(df_backtest, iterations=1000, samples=100):
 ##################################
 #%% Example of use
 ##################################
+
+#%% Obtain list of tickers from database (extracted from NASDAQ) and download stock data
+url = 'https://gist.githubusercontent.com/pbatoon0316/1b45f69402cf56e8174ad2034b62db2a/raw/a78376ab57e85d288bfcb3e832ca766ab81aa4ff/nasdaq_nyse_amex_tickers_20242801.csv'
+stocks = pd.read_csv(url)
+tickers = stocks['Symbol'].tolist()
 
 #%% Run backtest to generate population of trades
 size = 1000       # $1000 if capital deploted
