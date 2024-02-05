@@ -1,5 +1,5 @@
 
-# event-driven-backtester.py - Python Backtesting Code Explanation
+# event-driven-backtester.py
 
 I would like to present my home-built backtesting framework for evaluating trading strategies using historical stock price data. It utilizes various technical indicators and entry/exit conditions to simulate and analyze trading decisions. The main difference between this backtesting framework and other vector-based programs is that this does not hold overlapping positions within the same ticker. When a trade is entered, no new positions are established until the trade hits stop loss or exit criteria.
 
