@@ -1,7 +1,7 @@
 
 # event-driven-backtester.py
 
-I would like to present my home-built backtesting framework for evaluating trading strategies using historical stock price data. It utilizes various technical indicators and entry/exit conditions to simulate and analyze trading decisions. The main difference between this backtesting framework and other vector-based programs is that this does not hold overlapping positions within the same ticker. When a trade is entered, no new positions are established until the trade hits stop loss or exit criteria.
+The following is a home-built backtesting framework for evaluating trading strategies using historical stock price data. It utilizes various technical indicators and entry/exit conditions to simulate and analyze trading decisions. The main difference between this backtesting framework and other vector-based programs is that this does not hold overlapping positions within the same ticker. When a trade is entered, no new positions are established until the trade hits stop loss or exit criteria.
 
 #### Dependencies
 
@@ -59,7 +59,7 @@ The function performs the following steps:
 
 The function returns the `df_backtest_sample` DataFrame.
 
-## Example of Use
+## Example of Use - Backtesting the TTM Squeeze
 
 The provided example demonstrates the usage of the backtesting framework.
 
@@ -69,6 +69,50 @@ The provided example demonstrates the usage of the backtesting framework.
 4. It adjusts the recorded maximum losses to match the requested maximum loss. (optional)
 5. It plots the sampled backtest results.
 
+### Configuration
+Adapting the backtest for TTM Squeeze requires additional parameters such as a Keltner Channel and Bollinger Bands. In this specific case, a squeeze is defined as "Upper BB < Upper KC" or " Lower BB > Lower KC", denoted by red dots in the Squeeze indicator below.
+![image](https://github.com/pbatoon0316/event-driven-backtester/assets/118654860/023db304-6233-4b47-91c2-c7b9259663d3)
+
+```
+### Calculate parameters and indicators
+df['%change'] = df['close'].pct_change()
+df['atr'] = TA.ATR(df, period=14)
+df['ema_stop'] = TA.EMA(df, period=ema_stop)
+df['ema20'] = TA.EMA(df, period=20)
+df['ema100'] = TA.EMA(df, period=100)
+df['ema200'] = TA.EMA(df, period=200)
+df['RSI'] = TA.RSI(df, period=14)
+df['smooth RSI'] = df['RSI'].rolling(5).mean()
+
+## TTM Squeeze Indicators - KC and BB
+df['kc_upper'] = df['ema20'] + 1.5*df['atr']
+df['kc_lower'] = df['ema20'] - 1.5*df['atr']
+df[['bb_upper','bb_mid','bb_lower']] = TA.BBANDS(df,  20)
+df['squeeze'] = (df['bb_upper'] < df['kc_upper']) & (df['bb_lower'] > df['kc_lower'])
+
+### Entry and exit conditions
+# Entry
+c_squeeze = (df['squeeze']==False) & (df['squeeze'].shift(1)==True) & (df['squeeze'].shift(2)==True)
+c_up = df['%change'] > 0
+c_rsi = df['smooth RSI'] > 50
+c_entry = c_squeeze & c_up & c_rsi
+
+# Exit
+c_exit = df['low'] < df['ema_stop']
+c_max_loss = trade_size * max_loss
+```
+Positions are opened by purchasing at the `close` of each daily bar 
+```
+### Loop through dates
+for i in  range(len(df)):
+  if deploy_capital == True:
+    if  (c_entry[i] == True) & (df['close'].iloc[i]<1000):
+      price = df['close'].iloc[i]
+```
+  
+
+
+### Running the backtest
 ```
 #%% Obtain list of tickers from database (extracted from NASDAQ) and download stock data
 url = 'https://gist.githubusercontent.com/pbatoon0316/1b45f69402cf56e8174ad2034b62db2a/raw/a78376ab57e85d288bfcb3e832ca766ab81aa4ff/nasdaq_nyse_amex_tickers_20242801.csv'
@@ -86,3 +130,18 @@ df_backtest.loc[df_backtest['pnl'] < -max_loss*size,'pnl'] = -max_loss*size    #
 #%% Plot sampled backtest
 df_backtest_sample = sample_backtest(df_backtest, iterations=1000, samples=100)
 ```
+### Results
+The results indicate that over a 5-year backtest period, it was able to execute 22,887 unique trade events with a 41.1% winrate. Since we're able to control our max loss via a Stop Loss cutoff, the results are highly "right skewed" with a positive pnl. In other words, certain trades may have outsized risk:reward
+
+By sampling the data 1000 times over 100 potential trades, you can see a distribution of possible outcomes. While the `pnl` expectation value is positive, there is still a realm of possibility that this strategy results in negative returns.
+```
+-Backtest Complete-
+# Trades  = 22887
+Winrate = 41.1%
+Total P&L = $85024.63
+Mean P&L  = $3.72
+Median P&L  = $-4.93
+```
+![image](https://github.com/pbatoon0316/event-driven-backtester/assets/118654860/72f0f2ac-c404-4276-b26b-4391abd8b2ff)
+![image](https://github.com/pbatoon0316/event-driven-backtester/assets/118654860/a9b39369-7c78-4c53-8c9a-b8498b02cd63)
+
